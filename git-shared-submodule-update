@@ -31,7 +31,6 @@ __submodule_update_path () {
     if [ ! -d "$shared_dir" ]; then
         git clone --bare "$remote_url" "$shared_dir" || die "failed: git clone --bare $remote_url $shared_dir"
     fi
-    echo git submodule update $update_opts --reference "$shared_dir" "$path"
     git submodule update $update_opts --reference "$shared_dir" "$path"
 }
 
