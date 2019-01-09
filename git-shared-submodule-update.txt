@@ -18,7 +18,7 @@ Simply does submodule-update but faster by `--reference` and locally cached repo
 
 On shared-submodule-update, the submodule's remote repository is cloned to a
 shared repository under `~/.git-shared-submodule` (configurable) first.
-+
+
 Then
 the submodule is updated by `git submodule update` with `--reference` pointing
 to the shared repo, making submodule-update faster if you are using same
