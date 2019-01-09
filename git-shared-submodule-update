@@ -56,12 +56,15 @@ cmd_update () {
 
     if [ $# = 0 ]
     then
-        git ls-files -z --stage | while IFS= read -d '' -r mode _ _ path
+        git ls-files -z --stage | while IFS= read -r -d '' line
         do
-            if [ "$mode" = "160000" ]
-            then
-                __submodule_update_path "$path" "$update_opts" || true
-            fi
+            echo "$line" | while read -r mode _ _ path
+            do
+                if [ "$mode" = "160000" ]
+                then
+                    __submodule_update_path "$path" "$update_opts" || die "failed: git submodule-update $path"
+                fi
+            done
         done
 
     else
