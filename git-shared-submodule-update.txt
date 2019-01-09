@@ -1,0 +1,46 @@
+git-shared-submodule-update(1)
+==============================
+
+NAME
+----
+
+git-shared-submodule-update - Faster submodule-update by sharing .git directories
+
+SYNOPSIS
+--------
+[verse]
+'git shared-submodule-update' [--init] [<path>]
+
+DESCRIPTION
+-----------
+
+Simply does submodule-update but faster by sharing .git directories using `--reference`.
+
+On shared-submodule-update, the submodule's remote repository is cloned to a shared repository
+under `~/.git-shared-submodule` (configurable) first.
+Then the submodule is updated by `git submodule update` with `--reference` pointing to the shared repo,
+making submodule-update faster if you are using same submodule among many repositories.
+
+OPTIONS
+-------
+--init::
+	Passed to `git submodule update`.
+
+CONFIGURATION
+-------------
+
+shared-submodule-update.root::
+	The directory under which the shared repositories are cloned. Defaults to `~/.git-shared-submodule`.
+	Can be overridden by environment variable `GIT_SHARED_SUBMODULE_ROOT`.
+
+CAUTION
+-------
+
+The cloned submodules' Git objects depend on the shared repository, so be careful when removing the shared repository.
+If a shared repository is accidentally removed, do `submodule deinit --force` for each referencing submodules to reset them.
+
+Also, read the note for git-clone(1)'s `--reference`, `--shared`, and `--dissociate` options carefully.
+
+AUTHOR
+------
+Written by motemen <motemen@gmail.com>

@@ -1,0 +1,72 @@
+#!/bin/bash
+#
+# git shared-submodule-update [--init] [<path>]
+
+USAGE="update [--init] [<path>]"
+
+root=${GIT_SHARED_SUBMODULE_ROOT-$(git config --global shared-submodule.root || true)}
+if [ -z "$root" ]
+then
+    root="$HOME/.git-shared-submodule"
+fi
+
+if ! type git-sh-setup > /dev/null 2>&1
+then
+    PATH="$(git --exec-path):$PATH"
+fi
+
+. git-sh-setup
+
+__remote_url_to_shared_dir () {
+    dir=$(echo "$1" | perl -ple 's/[^a-zA-Z0-9.-]/"_" . unpack("H2", $&) . "_"/eg') || die
+    echo "$root/$dir"
+}
+
+__submodule_update_path () {
+    path=$1
+    update_opts=$2
+
+    remote_url=$(git config -f .gitmodules "submodule.$path.url") || die "no entry found for submodule $path"
+    shared_dir=$(__remote_url_to_shared_dir "$remote_url") || die
+    if [ ! -d "$shared_dir" ]; then
+        git clone --bare "$remote_url" "$shared_dir" || die "failed: git clone --bare $remote_url $shared_dir"
+    fi
+    git submodule update "${update_opts[@]}" --reference "$shared_dir" "$path"
+}
+
+cmd_update () {
+    update_opts=""
+
+    while test $# != 0
+    do
+        case "$1" in
+            --init)
+                update_opts="--init"
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
+                break
+                ;;
+        esac
+        shift
+    done
+
+    if [ $# = 0 ]
+    then
+        git ls-files -z --stage | while IFS= read -d '' -r mode _ _ path
+        do
+            if [ "$mode" = "160000" ]
+            then
+                __submodule_update_path "$path" "$update_opts" || true
+            fi
+        done
+
+    else
+        __submodule_update_path "$1" "$update_opts"
+    fi
+}
+
+cmd_update "$@"
