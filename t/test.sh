@@ -21,7 +21,7 @@ __git_commit () {
     counter=$(cat "$counter_file")
     echo file "$counter" >> "FILE_$counter"
     git add "FILE_$counter"
-    git commit -m "commit #$counter at $(basename "$(pwd)")"
+    git commit -q -m "commit #$counter at $(basename "$(pwd)")"
     echo $(( counter + 1 )) > "$counter_file"
 }
 
@@ -35,10 +35,10 @@ for repo in project-foo project-bar module-a module-b; do
       git init --bare
     ) >&3 2>&4
 
-    ( git clone "orig/$repo" "tmp/$repo"
+    ( git clone -q "orig/$repo" "tmp/$repo"
       cd "tmp/$repo"
       __git_commit
-      git push origin master ) >&3 2>&4
+      git push -q origin master ) >&3 2>&4
 done
 
 path_module_a=$(cd "orig/module-a" && pwd)
@@ -52,32 +52,34 @@ path_module_b=$(cd "orig/module-b" && pwd)
 ( cd tmp/project-bar
   git submodule add "$path_module_a"
   git commit -m 'added module-a to bar'
-  git push origin master ) >&3 2>&4
+  git push -q origin master ) >&3 2>&4
 
 ( cd tmp/project-bar
   git submodule add "$path_module_b"
   git commit -m 'added module-b to foo'
-  git push origin master ) >&3 2>&4
+  git push -q origin master ) >&3 2>&4
 
 # done initializing
 
 test_expect_success 'shared-submodule-update --init <path> succeeds' '
-  ( git clone --no-hardlinks orig/project-foo repo/project-foo &&
+  ( git clone -q --no-local orig/project-foo repo/project-foo &&
     cd repo/project-foo &&
     git submodule status module-a | grep "^-" &&
-    git shared-submodule-update --init module-a &&
-    git submodule status module-a | grep "^ "
+    git shared-submodule-update --init --no-dissociate module-a &&
+    git submodule status module-a | grep "^ " &&
+    test -f .git/modules/module-a/objects/info/alternates
     )
 '
 
 test_expect_success 'shared-submodule-update --init succeeds on another repo' '
-  ( git clone --no-hardlinks orig/project-bar repo/project-bar &&
+  ( git clone -q --no-local orig/project-bar repo/project-bar &&
     cd repo/project-bar &&
     git submodule status module-a | grep "^-" &&
     git submodule status module-b | grep "^-"
     git shared-submodule-update --init &&
     git submodule status module-a | grep "^ " &&
-    git submodule status module-b | grep "^ "
+    git submodule status module-b | grep "^ " &&
+    ! test -f .git/modules/module-a/objects/info/alternates
     )
 '
 

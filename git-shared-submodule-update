@@ -2,7 +2,7 @@
 #
 # git shared-submodule-update [--init] [<path>]
 
-USAGE="update [--init] [<path>]"
+USAGE="update [--init] [--no-dissociate] [<path>]"
 
 root=${GIT_SHARED_SUBMODULE_ROOT-$(git config --global shared-submodule.root || true)}
 if [ -z "$root" ]
@@ -31,17 +31,22 @@ __submodule_update_path () {
     if [ ! -d "$shared_dir" ]; then
         git clone --bare "$remote_url" "$shared_dir" || die "failed: git clone --bare $remote_url $shared_dir"
     fi
-    git submodule update "${update_opts[@]}" --reference "$shared_dir" "$path"
+    echo git submodule update $update_opts --reference "$shared_dir" "$path"
+    git submodule update $update_opts --reference "$shared_dir" "$path"
 }
 
 cmd_update () {
     update_opts=""
+    dissociate="--dissociate"
 
     while test $# != 0
     do
         case "$1" in
             --init)
                 update_opts="--init"
+                ;;
+            --no-dissociate)
+                dissociate=""
                 ;;
             --)
                 shift
@@ -53,6 +58,8 @@ cmd_update () {
         esac
         shift
     done
+
+    update_opts="$update_opts $dissociate"
 
     if [ $# = 0 ]
     then
