@@ -41,8 +41,8 @@ cmd_update () {
     while test $# != 0
     do
         case "$1" in
-            --init)
-                update_opts="--init"
+            --init|--remote)
+                update_opts="$update_opts $1"
                 ;;
             --no-dissociate)
                 dissociate=""
